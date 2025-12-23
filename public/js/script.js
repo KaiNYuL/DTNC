@@ -387,7 +387,6 @@ function initAlgorithmInfo() {
         { id: 'mmhc', name: '最大最小爬山算法 (MMHC)', description: '结合最大最小父母算法和爬山算法，用于高效发现变量间的因果关系。' },
         { id: 'interiamb', name: '改进的增量关联Markov边界算法 (INTER-IAMB)', description: '通过发现变量的Markov边界来构建因果网络，适用于变量间关系较复杂的数据集。' },
         { id: 'notears', name: 'NOTears算法 (NOTEARS)', description: '基于L1正则化的因果发现算法，适用于高维数据集的因果关系分析。' },
-        { id: 'granger', name: '格兰杰因果算法 (Granger Causality)', description: '基于时间序列数据的格兰杰因果关系分析，用于发现变量间的因果关系。' }
     ];
     
     // 存储算法信息到全局变量

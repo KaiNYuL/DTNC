@@ -15,8 +15,7 @@ from sklearn.preprocessing import StandardScaler
 from scipy.linalg import expm
 from scipy.optimize import minimize
 # 导入格兰杰因果所需的库
-from statsmodels.tsa.stattools import adfuller
-from statsmodels.tsa.vector_ar.var_model import VAR
+
 
 class Algorithms:
     def __init__(self):
@@ -366,13 +365,13 @@ class Algorithms:
                       correlation=link['correlation'])
         
         # 绘制图形
-        plt.figure(figsize=(12, 8))
+        fig, ax = plt.subplots(figsize=(12, 8))
         
         # 使用spring布局
         pos = nx.spring_layout(G, k=0.5, iterations=50)
         
         # 绘制节点
-        nx.draw_networkx_nodes(G, pos, node_size=500, node_color='darkgreen')
+        nx.draw_networkx_nodes(G, pos, node_size=500, node_color='darkgreen', ax=ax)
         
         # 绘制边
         edges = G.edges(data=True)
@@ -383,21 +382,19 @@ class Algorithms:
         
         nx.draw_networkx_edges(G, pos, edgelist=edges, width=2, 
                                edge_color=edge_colors, edge_cmap=cmap, 
-                               arrowstyle='->', arrowsize=12)
+                               arrowstyle='->', arrowsize=12, ax=ax)
         
         # 添加节点标签
         labels = {node[0]: node[1]['name'] for node in G.nodes(data=True)}
-        nx.draw_networkx_labels(G, pos, labels, font_size=10)
-        
-
+        nx.draw_networkx_labels(G, pos, labels, font_size=10, ax=ax)
         
         # 添加颜色条
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=0, vmax=1))
         sm.set_array([])
-        plt.colorbar(sm, label='Edge Weight')
+        plt.colorbar(sm, label='Edge Weight', ax=ax)
         
         plt.title(title)
-        plt.axis('off')
+        ax.axis('off')
         
         # 将图形转换为base64编码
         buffer = io.BytesIO()
@@ -1146,175 +1143,5 @@ class Algorithms:
             'nodes': nodes,
             'links': links,
             'adjacency_matrix': W_est.tolist(),
-            'graph_base64': graph_base64
-        }
-    
-    def granger_causality_algorithm(self, data, feature_names):
-        """实现多变量格兰杰因果算法
+            'graph_base64': graph_base64}
         
-        Args:
-            data: 输入数据矩阵，shape=(n_samples, n_features)，时序数据
-            feature_names: 特征名称列表
-            
-        Returns:
-            dict: 包含nodes、links、因果矩阵和网络图的字典
-        """
-        # 1. 数据预处理与平稳性检验
-        def check_stationarity(series):
-            """ADF单位根检验
-            
-            Args:
-                series: 时间序列数据
-                
-            Returns:
-                bool: 序列是否平稳
-                float: p值
-            """
-            result = adfuller(series)
-            p_value = result[1]
-            return p_value < 0.05, p_value
-        
-        n_samples, n_features = data.shape
-        data_stationary = np.zeros_like(data)
-        is_stationary = []
-        
-        # 检查每个变量的平稳性，非平稳序列进行差分
-        for i in range(n_features):
-            series = data[:, i]
-            stationary, p_value = check_stationarity(series)
-            is_stationary.append(stationary)
-            
-            # 如果序列非平稳，进行差分
-            if not stationary:
-                diff_series = np.diff(series)
-                data_stationary[:-1, i] = diff_series
-                # 使用差分后的数据（长度减1）
-                data_stationary = data_stationary[:-1, :]
-                n_samples -= 1
-        
-        # 2. 确定VAR模型的最优滞后阶数p_opt
-        p_max = 10  # 最大滞后阶数
-        min_aic = np.inf
-        p_opt = 1
-        
-        # 确保数据长度足够
-        if n_samples < p_max:
-            p_max = n_samples - 1
-            if p_max < 1:
-                p_max = 1
-        
-        # 遍历可能的滞后阶数
-        for p in range(1, p_max + 1):
-            try:
-                var_model = VAR(data_stationary)
-                results = var_model.fit(p)
-                aic = results.aic
-                if aic < min_aic:
-                    min_aic = aic
-                    p_opt = p
-            except Exception as e:
-                continue
-        
-        # 3. 构建完整VAR模型
-        try:
-            var_model = VAR(data_stationary)
-            unrestricted_results = var_model.fit(p_opt)
-        except Exception as e:
-            # 如果无法拟合VAR模型，使用简化方法
-            print(f"VAR模型拟合失败: {e}")
-            # 创建空的因果矩阵
-            causality_matrix = np.zeros((n_features, n_features))
-            nodes = []
-            links = []
-            for i, name in enumerate(feature_names):
-                nodes.append({
-                    'id': i,
-                    'name': name,
-                    'group': 1
-                })
-            graph_base64 = self._generate_graph(nodes, links, feature_names, 'Granger Causality Network', is_directed=True)
-            return {
-                'nodes': nodes,
-                'links': links,
-                'causality_matrix': causality_matrix.tolist(),
-                'graph_base64': graph_base64
-            }
-        
-        # 4. 计算格兰杰因果
-        causality_matrix = np.zeros((n_features, n_features))
-        significance_level = 0.05
-        
-        # 遍历所有变量对
-        for i in range(n_features):  # 原因变量
-            for j in range(n_features):  # 结果变量
-                if i == j:
-                    continue  # 跳过自身因果
-                
-                # 构建受限VAR模型（排除原因变量i的滞后项）
-                try:
-                    # 准备受限模型的数据（排除变量i）
-                    restricted_data = np.delete(data_stationary, i, axis=1)
-                    
-                    # 拟合受限VAR模型
-                    restricted_var_model = VAR(restricted_data)
-                    restricted_results = restricted_var_model.fit(p_opt)
-                    
-                    # 计算LR统计量
-                    # 自由度：k1*k2*p_opt，其中k1=1（原因变量个数），k2=1（结果变量个数）
-                    df = p_opt
-                    
-                    # 计算残差协方差矩阵的行列式
-                    sigma_unrestricted = unrestricted_results.resid.cov()
-                    sigma_restricted = restricted_results.resid.cov()
-                    
-                    det_sigma_unrestricted = np.linalg.det(sigma_unrestricted)
-                    det_sigma_restricted = np.linalg.det(sigma_restricted)
-                    
-                    # LR统计量
-                    lr_statistic = (n_samples - n_features * p_opt - 1) * (np.log(det_sigma_restricted) - np.log(det_sigma_unrestricted))
-                    
-                    # 计算p值（卡方分布）
-                    p_value = 1 - chi2.cdf(lr_statistic, df)
-                    
-                    # 判断因果关系
-                    if p_value < significance_level:
-                        causality_matrix[i, j] = lr_statistic  # 使用LR统计量作为因果强度
-                except Exception as e:
-                    continue
-        
-        # 5. 构建网络
-        nodes = []
-        links = []
-        
-        # 创建节点
-        for i, name in enumerate(feature_names):
-            nodes.append({
-                'id': i,
-                'name': name,
-                'group': 1
-            })
-        
-        # 创建有向连接
-        for i in range(n_features):
-            for j in range(n_features):
-                if i != j and causality_matrix[i, j] > 0:
-                    links.append({
-                        'source': i,
-                        'target': j,
-                        'value': causality_matrix[i, j],
-                        'correlation': causality_matrix[i, j]  # 使用LR统计量作为因果强度
-                    })
-        
-        # 6. 生成网络图（有向图）
-        graph_base64 = self._generate_graph(nodes, links, feature_names, 'Granger Causality Network', is_directed=True)
-        
-        # 7. 返回结果
-        return {
-            'nodes': nodes,
-            'links': links,
-            'causality_matrix': causality_matrix.tolist(),
-            'graph_base64': graph_base64
-        }
-        }
-    
-    
