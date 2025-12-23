@@ -5,7 +5,8 @@ from werkzeug.utils import secure_filename
 
 class FileUtils:
     def __init__(self):
-        self.UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), '../uploads')
+        # 使用绝对路径
+        self.UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../uploads'))
         self.ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'xls'}
         
         # 确保上传目录存在
@@ -36,8 +37,20 @@ class FileUtils:
                 file_ext = 'csv'  # 默认假设是CSV格式
                 
             if file_ext == 'csv':
-                # 读取CSV文件
-                df = pd.read_csv(file_path, encoding='utf-8')
+                # 尝试使用不同编码读取CSV文件
+                encodings = ['utf-8', 'gbk', 'utf-16', 'latin-1']
+                df = None
+                for encoding in encodings:
+                    try:
+                        df = pd.read_csv(file_path, encoding=encoding)
+                        break
+                    except UnicodeDecodeError:
+                        continue
+                    except Exception as e:
+                        raise Exception(f"使用编码{encoding}读取CSV文件失败: {str(e)}")
+                
+                if df is None:
+                    raise Exception("所有尝试的编码格式都无法解析该CSV文件")
             else:
                 # 读取Excel文件
                 df = pd.read_excel(file_path)
