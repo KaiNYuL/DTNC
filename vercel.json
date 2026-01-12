@@ -1,15 +1,9 @@
 {
   "version": 2,
-  "builds": [
+  "rewrites": [
     {
-      "src": "python_algorithms/app.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "python_algorithms/app.py"
+      "source": "/(.*)",
+      "destination": "/python_algorithms/app.py"
     }
   ],
   "env": {
