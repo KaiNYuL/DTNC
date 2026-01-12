@@ -607,12 +607,12 @@ class Algorithms:
                             weight = abs(beta[parent_idx + 1])  # +1 是因为beta[0]是截距
                             correlation = beta[parent_idx + 1]
                         except (np.linalg.LinAlgError, ValueError):
-                            weight = 0.5
-                            correlation = 0.5
+                            weight = 0.1
+                            correlation = 0.1
                     else:
                         # 无父节点，使用默认权重
-                        weight = 0.5
-                        correlation = 0.5
+                        weight = 0.1
+                        correlation = 0.1
                         
                     links.append({
                         'source': i,
@@ -720,9 +720,9 @@ class Algorithms:
         data_scaled = scaler.fit_transform(data)
         
         # 设定算法参数
-        alpha = 0.05  # 条件互信息显著性阈值
-        Bootstrap_N = 20  # Bootstrap抽样次数
-        Freq_Thresh = 0.1  # 边频率阈值
+        alpha = 0.2  # 条件互信息显著性阈值
+        Bootstrap_N = 30  # Bootstrap抽样次数
+        Freq_Thresh = 0.3  # 边频率阈值
         
         # 步骤2：交错增量马尔可夫毯搜索（核心）
         def inter_iamb_core(data):
@@ -914,12 +914,12 @@ class Algorithms:
                             correlation = beta[parent_idx + 1]
                         else:
                             # 如果没有父节点，使用默认权重
-                            weight = 0.5
-                            correlation = 0.5
+                            weight = 0.1
+                            correlation = 0.1
                     except Exception as e:
                         print(f"Error calculating edge weight for ({i}, {j}): {e}")
-                        weight = 0.5
-                        correlation = 0.5
+                        weight = 0.1
+                        correlation = 0.1
                     
                     links.append({
                         'source': i,
@@ -1043,7 +1043,7 @@ class Algorithms:
         """
         # 1. 初始化参数
         n, d = data.shape
-        lambda_reg = 0.05  # L1正则系数
+        lambda_reg = 0.1  # L1正则系数
         tol = 1e-8  # 收敛阈值
         max_outer_iter = 200  # 外循环最大迭代次数
         max_inner_iter = 300  # 内循环最大迭代次数
