@@ -3,14 +3,11 @@
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/python_algorithms/app.py"
+      "destination": "/api/index.py"
     }
   ],
-  "env": {
-    "PYTHONPATH": "./python_algorithms"
-  },
   "functions": {
-    "python_algorithms/app.py": {
+    "api/index.py": {
       "maxDuration": 60
     }
   }
