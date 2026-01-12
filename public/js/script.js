@@ -1,5 +1,10 @@
 // 页面加载完成后执行
 document.addEventListener('DOMContentLoaded', function() {
+    // API 统一走同源；如果用 file:// 直接打开页面，则回退到本地开发地址
+    window.API_BASE = (window.location.origin && window.location.origin !== 'null')
+        ? window.location.origin
+        : 'http://localhost:3000';
+
     // 初始化所有功能
     initSmoothScrolling();
     initScrollAnimations();
@@ -93,7 +98,7 @@ function initDataUpload() {
         formData.append('dataFile', dataFile);
         
         // 发送POST请求到后端API
-        fetch('http://localhost:3000/api/datasets/upload', {
+        fetch(`${window.API_BASE}/api/datasets/upload`, {
             method: 'POST',
             body: formData
         })
@@ -139,7 +144,7 @@ function loadDatasets() {
     datasetsList.innerHTML = '<div class="loading">加载中...</div>';
     
     // 从后端API获取数据集列表
-    fetch('http://localhost:3000/api/datasets')
+    fetch(`${window.API_BASE}/api/datasets`)
         .then(response => response.json())
         .then(data => {
             // 清空加载状态
@@ -218,7 +223,7 @@ function selectDatasetForAnalysis(datasetId) {
 function deleteDataset(datasetId) {
     if (confirm('确定要删除这个数据集吗？')) {
         // 调用后端API删除数据集
-        fetch(`http://localhost:3000/api/datasets/${datasetId}`, {
+        fetch(`${window.API_BASE}/api/datasets/${datasetId}`, {
             method: 'DELETE'
         })
         .then(response => response.json())
@@ -240,7 +245,7 @@ function deleteDataset(datasetId) {
 // 加载数据集特征
 function loadDatasetFeatures(datasetId) {
     // 调用后端API获取数据集特征
-    fetch(`http://localhost:3000/api/datasets/${datasetId}/features`)
+    fetch(`${window.API_BASE}/api/datasets/${datasetId}/features`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -319,7 +324,7 @@ function initAnalysisControls() {
         const savePath = document.getElementById('save-path')?.value || '';
         
         // 调用后端API进行数据分析
-        fetch('http://localhost:3000/api/analyze', {
+        fetch(`${window.API_BASE}/api/analyze`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -467,7 +472,7 @@ function saveAdjacencyMatrix() {
     }
     
     // 从后端获取testdata中的邻接矩阵文件
-    fetch(`http://localhost:3000/api/testdata/files/${datasetId}`)
+    fetch(`${window.API_BASE}/api/testdata/files/${datasetId}`)
         .then(response => response.json())
         .then(data => {
             if (data.success && data.data.length > 0) {
@@ -485,7 +490,7 @@ function saveAdjacencyMatrix() {
                     const latestFile = adjFiles[0];
                     // 触发下载
                     const link = document.createElement('a');
-                    link.href = `http://localhost:3000/api/testdata/download/${latestFile.name}`;
+                    link.href = `${window.API_BASE}/api/testdata/download/${latestFile.name}`;
                     link.download = latestFile.name;
                     link.style.visibility = 'hidden';
                     
@@ -516,7 +521,7 @@ function savePng() {
     }
     
     // 从后端获取testdata中的网络图像文件
-    fetch(`http://localhost:3000/api/testdata/files/${datasetId}`)
+    fetch(`${window.API_BASE}/api/testdata/files/${datasetId}`)
         .then(response => response.json())
         .then(data => {
             if (data.success && data.data.length > 0) {
@@ -534,7 +539,7 @@ function savePng() {
                     const latestFile = pngFiles[0];
                     // 触发下载
                     const link = document.createElement('a');
-                    link.href = `http://localhost:3000/api/testdata/download/${latestFile.name}`;
+                    link.href = `${window.API_BASE}/api/testdata/download/${latestFile.name}`;
                     link.download = latestFile.name;
                     link.style.visibility = 'hidden';
                     
