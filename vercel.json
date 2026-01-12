@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "python_algorithms/app.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "python_algorithms/app.py"
+    }
+  ],
+  "env": {
+    "PYTHONPATH": "./python_algorithms"
+  },
+  "functions": {
+    "python_algorithms/app.py": {
+      "maxDuration": 60
+    }
+  }
+}

@@ -6,7 +6,11 @@ from werkzeug.utils import secure_filename
 class FileUtils:
     def __init__(self):
         # 使用绝对路径
-        self.UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../uploads'))
+        if os.environ.get('VERCEL'):
+            self.UPLOAD_FOLDER = '/tmp/uploads'
+        else:
+            self.UPLOAD_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), '../uploads'))
+        
         self.ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'xls'}
         
         # 确保上传目录存在

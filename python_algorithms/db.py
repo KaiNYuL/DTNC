@@ -4,7 +4,14 @@ import os
 
 class Database:
     def __init__(self):
-        self.db_path = os.path.join(os.path.dirname(__file__), '../data/database.db')
+        # Checks if running on Vercel (or just use /tmp for safer write access in serverless)
+        if os.environ.get('VERCEL'):
+            self.db_path = '/tmp/database.db'
+        else:
+            self.db_path = os.path.join(os.path.dirname(__file__), '../data/database.db')
+            # Ensure local data directory exists
+            os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+            
         self.connection = sqlite3.connect(self.db_path, check_same_thread=False)
         self.connection.row_factory = sqlite3.Row
         self.create_tables()

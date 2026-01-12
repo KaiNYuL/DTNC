@@ -18,7 +18,14 @@ app = Flask(__name__,
 CORS(app)  # 启用CORS
 
 # 配置文件上传
-app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), '../uploads')
+if os.environ.get('VERCEL'):
+    app.config['UPLOAD_FOLDER'] = '/tmp/uploads'
+else:
+    app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), '../uploads')
+
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'])
+
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB
 
 # 初始化工具类
@@ -39,8 +46,15 @@ def save_analysis_results(adjacency_matrix, graph_base64, feature_names, dataset
         # 确定保存目录
         if save_path:
             testdata_dir = os.path.abspath(save_path)
+            # 如果提供了save_path但不在/tmp下且我们在vercel上，可能还是会有问题，但用户通常不会在云端提供自定义路径。
+            # 为安全起见，如果在Vercel，忽略自定义路径强制使用/tmp
+            if os.environ.get('VERCEL'):
+                testdata_dir = os.path.join('/tmp', 'testdata')
+        elif os.environ.get('VERCEL'):
+            testdata_dir = os.path.join('/tmp', 'testdata')
         else:
             testdata_dir = os.path.join(os.path.dirname(__file__), 'testdata')
+            
         ensure_directory_exists(testdata_dir)
         
         # 获取数据集名称
